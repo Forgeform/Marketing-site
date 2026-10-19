@@ -23,6 +23,78 @@
     });
   }
 
+  // Header shadow on scroll
+  var header = document.querySelector('.site-header');
+  if (header) {
+    var onScroll = function () {
+      header.classList.toggle('scrolled', window.pageYOffset > 8);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+
+  // Ticker: duplicate track for a seamless loop
+  var ticker = document.getElementById('ticker-track');
+  if (ticker) {
+    ticker.innerHTML += ticker.innerHTML;
+  }
+
+  // Scroll-reveal on all .reveal elements
+  var revealEls = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window && revealEls.length) {
+    var revealObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          revealObs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    revealEls.forEach(function (el) { revealObs.observe(el); });
+  } else {
+    revealEls.forEach(function (el) { el.classList.add('in'); });
+  }
+
+  // Animated counters in hero stats
+  var counters = document.querySelectorAll('[data-count]');
+  if ('IntersectionObserver' in window && counters.length) {
+    var countObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var el = entry.target;
+        countObs.unobserve(el);
+        var target = parseInt(el.getAttribute('data-count'), 10);
+        if (isNaN(target)) return;
+        var dur = 900, start = null;
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduce || target === 0) { el.textContent = String(target); return; }
+        var step = function (ts) {
+          if (!start) start = ts;
+          var p = Math.min((ts - start) / dur, 1);
+          var eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = String(Math.round(eased * target));
+          if (p < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      });
+    }, { threshold: 0.6 });
+    counters.forEach(function (el) { countObs.observe(el); });
+  }
+
+  // Flow timeline: highlight the step in view
+  var steps = document.querySelectorAll('#flow .flow-step');
+  if ('IntersectionObserver' in window && steps.length) {
+    var stepObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          steps.forEach(function (s) { s.classList.remove('active'); });
+          entry.target.classList.add('active');
+        }
+      });
+    }, { threshold: 0.6, rootMargin: '-20% 0px -20% 0px' });
+    steps.forEach(function (s) { stepObs.observe(s); });
+  }
+
   // CTA form — no backend, so just acknowledge
   var form = document.querySelector('.cta-form');
   if (form) {
