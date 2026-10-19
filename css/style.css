@@ -377,6 +377,7 @@ a:hover { text-decoration: underline; }
 .form-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .form-row input::placeholder { color: var(--ink-muted); }
 .form-note { font-size: .85rem; color: var(--ink-muted); margin-top: 8px; }
+.form-status { font-size: .85rem; margin-top: 6px; min-height: 1.2em; }
 
 /* ===== Footer ===== */
 .site-footer { background: var(--ink); color: #c8cdd4; padding: 48px 0 32px; }

@@ -95,23 +95,79 @@
     steps.forEach(function (s) { stepObs.observe(s); });
   }
 
-  // CTA form — no backend, so just acknowledge
+  // CTA form — submits to Formspree (no backend needed for static hosting)
   var form = document.querySelector('.cta-form');
   if (form) {
+    var btn = form.querySelector('button[type="submit"]');
+    var note = form.querySelector('.form-note');
+    var status = form.querySelector('.form-status');
+    var action = form.getAttribute('action');
+    var isPlaceholder = action && action.indexOf('YOUR_FORM_SPREE_FORM_ID') !== -1;
+
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      var btn = form.querySelector('button[type="submit"]');
-      if (btn) {
+      if (!btn) return;
+      var originalBtnText = btn.textContent;
+
+      btn.textContent = 'Sending…';
+      btn.disabled = true;
+      btn.style.opacity = '0.75';
+      if (status) { status.textContent = ''; status.style.color = ''; }
+      if (note) { note.style.color = ''; note.style.fontWeight = ''; }
+
+      if (isPlaceholder) {
+        // Form not wired yet: acknowledge locally and show a setup hint
         btn.textContent = 'Thanks — we\u2019ll be in touch!';
-        btn.disabled = true;
-        btn.style.opacity = '0.75';
+        if (note) {
+          note.textContent = 'Form endpoint not configured yet — message captured locally.';
+          note.style.color = 'var(--ink-muted)';
+          note.style.fontWeight = '600';
+        }
+        if (status) {
+          status.textContent = 'To receive submissions, create a form at https://formspree.io and paste its endpoint into the form action in index.html.';
+          status.style.color = 'var(--ink-muted)';
+          status.style.fontSize = '.85rem';
+        }
+        return;
       }
-      var note = form.querySelector('.form-note');
-      if (note) {
-        note.textContent = 'We\u2019ll reach out within one working day.';
-        note.style.color = 'var(--ok)';
-        note.style.fontWeight = '600';
-      }
+
+      var formData = new FormData(form);
+      fetch(action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json' },
+      })
+        .then(function (resp) {
+          if (resp.ok) {
+            btn.textContent = 'Thanks — we\u2019ll be in touch!';
+            if (note) {
+              note.textContent = 'We\u2019ll reach out within one working day.';
+              note.style.color = 'var(--ok)';
+              note.style.fontWeight = '600';
+            }
+            if (status) {
+              status.textContent = 'Submission sent.';
+              status.style.color = 'var(--ok)';
+            }
+            form.reset();
+          } else {
+            throw new Error('Submission failed');
+          }
+        })
+        .catch(function (err) {
+          btn.textContent = originalBtnText;
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          if (note) {
+            note.textContent = "Couldn't send — please email us directly.";
+            note.style.color = 'var(--danger)';
+            note.style.fontWeight = '600';
+          }
+          if (status) {
+            status.textContent = 'Error sending message. Try again or email hello@factoryos.test.';
+            status.style.color = 'var(--danger)';
+          }
+        });
     });
   }
 
